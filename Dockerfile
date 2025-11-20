@@ -1,35 +1,20 @@
-FROM openjdk:21-jdk-slim
-ENV DISPLAY=host.docker.internal:0.0
+# Use an official Maven image as a parent image
+FROM maven:latest
 
-# Install required dependencies
-RUN apt-get update && \
-    apt-get install -y maven wget unzip \
-    libgtk-3-0 libgbm1 libx11-6 && \
-    apt-get clean
+# Set metadata information
+LABEL authors="fari"
 
-# Download and install JavaFX SDK
-RUN wget https://download2.gluonhq.com/openjfx/21/openjfx-21_linux-x64_bin-sdk.zip -O /tmp/openjfx.zip && \
-    unzip /tmp/openjfx.zip -d /opt && \
-    rm /tmp/openjfx.zip
-
-# List the contents of /opt to confirm where the JavaFX SDK was extracted
-RUN ls -l /opt
-
-# Set working directory
+# Set the working directory in the container
 WORKDIR /app
 
-# Copy the project files into the containerm
+# Copy the pom.xml file to the container
 COPY pom.xml /app/
-COPY src /app/src
 
-# Build the application (with dependencies bundled into the JAR)
-RUN mvn clean package -DskipTests
+# Copy the entire project to the container
+COPY . /app/
 
-# List contents of target folder to ensure the JAR is created
-RUN ls -l target/
+# Package your application
+RUN mvn package
 
-# List contents of the JavaFX SDK to ensure correct extraction
-RUN ls -l /opt/javafx-sdk-21 || ls -l /opt
-
-# Set the command to run the JavaFX application with the correct module path
-CMD ["java", "--module-path", "/opt/javafx-sdk-21/lib", "--add-modules", "javafx.controls,javafx.fxml", "-jar", "target/bmidemo.jar"]
+# Run the main class (assuming your application has a main class)
+CMD ["java", "-jar", "target/app.jar"]
